@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">WebDock</string>
+    <string name="empty_state_title">No web apps yet</string>
+    <string name="empty_state_subtitle">Add your first web app to get started.</string>
+</resources>
