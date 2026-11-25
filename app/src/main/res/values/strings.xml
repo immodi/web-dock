@@ -1,6 +1,42 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">WebDock</string>
+
     <string name="empty_state_title">No web apps yet</string>
     <string name="empty_state_subtitle">Add your first web app to get started.</string>
+    <string name="no_matches_title">No matching apps</string>
+    <string name="no_matches_subtitle">Try a different search or tag.</string>
+
+    <string name="search_hint">Search by name, host, or tag</string>
+    <string name="clear_search">Clear search</string>
+    <string name="view_grid">Grid</string>
+    <string name="view_list">List</string>
+    <string name="pinned">Pinned</string>
+
+    <string name="add_app">Add web app</string>
+    <string name="edit_app">Edit web app</string>
+    <string name="save">Save</string>
+    <string name="cancel">Cancel</string>
+
+    <string name="action_open">Open</string>
+    <string name="action_edit">Edit</string>
+    <string name="action_pin">Pin</string>
+    <string name="action_unpin">Unpin</string>
+    <string name="action_delete">Delete</string>
+
+    <string name="delete_title">Delete web app?</string>
+    <string name="delete_message">Delete “%1$s” and its local data? This cannot be undone.</string>
+
+    <string name="url_label">URL</string>
+    <string name="url_placeholder">https://example.com</string>
+    <string name="name_label">Name</string>
+    <string name="name_placeholder">Defaults to the host</string>
+    <string name="tags_label">Tags</string>
+    <string name="tag_placeholder">Add a tag</string>
+    <string name="add_tag">Add tag</string>
+    <string name="remove_tag">Remove %1$s</string>
+    <string name="error_invalid_url">Enter a valid http(s) URL</string>
+    <string name="error_duplicate_url">This URL is already in your list</string>
+    <string name="error_save_failed">Could not save. Try again.</string>
+    <string name="back">Back</string>
 </resources>

@@ -19,6 +19,12 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <activity
+            android:name=".webview.WebAppActivity"
+            android:documentLaunchMode="intoExisting"
+            android:exported="false"
+            android:theme="@style/Theme.WebDock" />
     </application>
 
 </manifest>

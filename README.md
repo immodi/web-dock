@@ -6,7 +6,7 @@ WebDock is not a browser: there is no address bar and no free browsing.
 
 ## Status
 
-Work in progress. The Gradle project, Compose theme, and app shell are in place; data, metadata, WebView runtime, and settings are being built.
+Work in progress. Working: the app list (grid/list, search, tag filters, pinning, long-press drag reorder for unpinned apps, delete), add/edit with URL validation and duplicate blocking, and a basic in-app WebView screen. Metadata, storage isolation, per-app settings, and the full WebView feature set are still being built.
 
 ## Releases
 

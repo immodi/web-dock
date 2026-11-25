@@ -1,0 +1,67 @@
+package com.immodi.webdock.data.prefs
+
+import android.content.Context
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.booleanPreferencesKey
+import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.emptyPreferences
+import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.preferencesDataStore
+import java.io.IOException
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.map
+
+enum class ThemeMode { SYSTEM, LIGHT, DARK }
+
+enum class HomeView { GRID, LIST }
+
+data class GlobalSettings(
+    val themeMode: ThemeMode = ThemeMode.SYSTEM,
+    val dynamicColor: Boolean = true,
+    val defaultView: HomeView = HomeView.GRID,
+)
+
+private val Context.settingsDataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
+
+class SettingsRepository(context: Context) {
+
+    private val dataStore = context.applicationContext.settingsDataStore
+
+    val settings: Flow<GlobalSettings> = dataStore.data
+        .catch { error ->
+            if (error is IOException) emit(emptyPreferences()) else throw error
+        }
+        .map { prefs ->
+            GlobalSettings(
+                themeMode = prefs[THEME_MODE]?.toThemeMode() ?: ThemeMode.SYSTEM,
+                dynamicColor = prefs[DYNAMIC_COLOR] ?: true,
+                defaultView = prefs[DEFAULT_VIEW]?.toHomeView() ?: HomeView.GRID,
+            )
+        }
+
+    suspend fun setThemeMode(mode: ThemeMode) {
+        dataStore.edit { it[THEME_MODE] = mode.name }
+    }
+
+    suspend fun setDynamicColor(enabled: Boolean) {
+        dataStore.edit { it[DYNAMIC_COLOR] = enabled }
+    }
+
+    suspend fun setDefaultView(view: HomeView) {
+        dataStore.edit { it[DEFAULT_VIEW] = view.name }
+    }
+
+    private fun String.toThemeMode(): ThemeMode =
+        runCatching { ThemeMode.valueOf(this) }.getOrDefault(ThemeMode.SYSTEM)
+
+    private fun String.toHomeView(): HomeView =
+        runCatching { HomeView.valueOf(this) }.getOrDefault(HomeView.GRID)
+
+    private companion object {
+        val THEME_MODE = stringPreferencesKey("theme_mode")
+        val DYNAMIC_COLOR = booleanPreferencesKey("dynamic_color")
+        val DEFAULT_VIEW = stringPreferencesKey("default_view")
+    }
+}
