@@ -3,6 +3,8 @@ package com.immodi.webdock.ui.edit
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.immodi.webdock.data.WebAppRepository
+import com.immodi.webdock.data.meta.Metadata
+import com.immodi.webdock.data.meta.MetadataRepository
 import com.immodi.webdock.domain.UrlNormalizer
 import com.immodi.webdock.domain.WebApp
 import kotlinx.coroutines.Job
@@ -26,6 +28,8 @@ data class EditUiState(
     val tags: List<String> = emptyList(),
     val tagInput: String = "",
     val urlError: EditUrlError? = null,
+    val metadata: Metadata? = null,
+    val metadataLoading: Boolean = false,
     val saving: Boolean = false,
     val saveFailed: Boolean = false,
 )
@@ -38,6 +42,7 @@ sealed interface EditEvent {
 class EditViewModel(
     private val appId: String?,
     private val repository: WebAppRepository,
+    private val metadataRepository: MetadataRepository,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(EditUiState(isNew = appId == null, loading = appId != null))
@@ -47,6 +52,7 @@ class EditViewModel(
     val events = _events.receiveAsFlow()
 
     private var duplicateJob: Job? = null
+    private var metadataJob: Job? = null
 
     init {
         if (appId != null) {
@@ -63,6 +69,13 @@ class EditViewModel(
                         name = app.name,
                         nameEdited = app.nameEdited,
                         tags = app.tags,
+                        metadata = Metadata(
+                            title = null,
+                            name = app.name,
+                            iconUrl = app.iconUrl,
+                            themeColor = app.themeColor,
+                            backgroundColor = app.backgroundColor,
+                        ),
                     )
                 }
             }
@@ -70,14 +83,35 @@ class EditViewModel(
     }
 
     fun onUrlChange(value: String) {
-        _state.update { it.copy(url = value, urlError = null, saveFailed = false) }
         duplicateJob?.cancel()
-        val normalized = UrlNormalizer.normalize(value) ?: return
+        metadataJob?.cancel()
+        _state.update {
+            it.copy(url = value, urlError = null, saveFailed = false, metadataLoading = false)
+        }
+        val normalized = UrlNormalizer.normalize(value)
+        if (normalized == null) {
+            _state.update { it.copy(metadata = null) }
+            return
+        }
         duplicateJob = viewModelScope.launch {
             delay(350)
             val duplicate = repository.findDuplicate(normalized, appId)
             if (duplicate != null) {
                 _state.update { it.copy(urlError = EditUrlError.DUPLICATE) }
+            }
+        }
+        metadataJob = viewModelScope.launch {
+            delay(700)
+            _state.update { it.copy(metadataLoading = true) }
+            val metadata = metadataRepository.fetch(normalized)
+            if (UrlNormalizer.normalize(_state.value.url) != normalized) return@launch
+            _state.update { current ->
+                val fetchedName = metadata?.name?.takeIf { it.isNotBlank() }
+                current.copy(
+                    metadataLoading = false,
+                    metadata = metadata,
+                    name = if (!current.nameEdited && fetchedName != null) fetchedName else current.name,
+                )
             }
         }
     }
@@ -126,11 +160,12 @@ class EditViewModel(
 
             val host = UrlNormalizer.hostOf(normalized) ?: normalized
             val original = current.original
+            val metadata = current.metadata
+            val urlChanged = original != null && normalized != original.url
             val name = when {
-                current.nameEdited -> current.name.trim().ifEmpty { host }
-                original == null -> host
-                normalized != original.url -> host
-                else -> current.name
+                current.nameEdited -> current.name.trim().ifEmpty { metadata?.name ?: host }
+                urlChanged -> metadata?.name ?: host
+                else -> current.name.trim().ifEmpty { metadata?.name ?: host }
             }
             val app = if (original == null) {
                 WebApp(
@@ -138,6 +173,9 @@ class EditViewModel(
                     name = name,
                     nameEdited = current.nameEdited,
                     tags = current.tags,
+                    iconUrl = metadata?.iconUrl,
+                    themeColor = metadata?.themeColor,
+                    backgroundColor = metadata?.backgroundColor,
                 )
             } else {
                 original.copy(
@@ -145,11 +183,27 @@ class EditViewModel(
                     name = name,
                     nameEdited = current.nameEdited,
                     tags = current.tags,
+                    iconUrl = if (urlChanged) metadata?.iconUrl else metadata?.iconUrl ?: original.iconUrl,
+                    iconFile = if (urlChanged) null else original.iconFile,
+                    themeColor = if (urlChanged) metadata?.themeColor else metadata?.themeColor ?: original.themeColor,
+                    backgroundColor = if (urlChanged) {
+                        metadata?.backgroundColor
+                    } else {
+                        metadata?.backgroundColor ?: original.backgroundColor
+                    },
                 )
             }
 
             repository.save(app, isNew = original == null)
-                .onSuccess { _events.send(EditEvent.Saved) }
+                .onSuccess {
+                    val iconToCache = if (urlChanged) metadata?.iconUrl else metadata?.iconUrl ?: original?.iconUrl
+                    val shouldCache = iconToCache != null &&
+                        (original == null || iconToCache != original.iconUrl || original.iconFile == null)
+                    if (shouldCache) {
+                        metadataRepository.cacheIconInBackground(app.id, iconToCache)
+                    }
+                    _events.send(EditEvent.Saved)
+                }
                 .onFailure { _state.update { it.copy(saving = false, saveFailed = true) } }
         }
     }

@@ -6,7 +6,7 @@ WebDock is not a browser: there is no address bar and no free browsing.
 
 ## Status
 
-Work in progress. Working: the app list (grid/list, search, tag filters, pinning, long-press drag reorder for unpinned apps, delete), add/edit with URL validation and duplicate blocking, and a basic in-app WebView screen. Metadata, storage isolation, per-app settings, and the full WebView feature set are still being built.
+Work in progress. Working: the app list (grid/list, search, tag filters, pinning, long-press drag reorder for unpinned apps, delete), add/edit with URL validation and duplicate blocking, live metadata preview with icon/name/theme-color fetching and cached icons, refresh metadata, and a basic in-app WebView screen. Storage isolation, per-app/global settings, and the full WebView feature set are still being built.
 
 ## Releases
 

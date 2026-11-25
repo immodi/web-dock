@@ -1,0 +1,12 @@
+{
+  "name": "Trade Journal",
+  "short_name": "Journal",
+  "theme_color": "rgb(1, 2, 3)",
+  "background_color": "#fff",
+  "start_url": "/?source=pwa",
+  "icons": [
+    { "src": "icons/192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icons/1024.png", "sizes": "1024x1024", "type": "image/png" },
+    { "src": "/icons/vector.svg", "sizes": "any", "type": "image/svg+xml" }
+  ]
+}
