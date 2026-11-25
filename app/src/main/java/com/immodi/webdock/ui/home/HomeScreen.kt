@@ -31,6 +31,7 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.AlertDialog
@@ -80,7 +81,7 @@ import com.immodi.webdock.AppContainer
 import com.immodi.webdock.R
 import com.immodi.webdock.data.prefs.HomeView
 import com.immodi.webdock.domain.WebApp
-import com.immodi.webdock.ui.components.AppIcon
+import com.immodi.webdock.ui.components.WebAppIcon
 import com.immodi.webdock.ui.components.hostLabel
 import com.immodi.webdock.ui.theme.WebDockTheme
 import kotlinx.coroutines.withTimeoutOrNull
@@ -93,7 +94,11 @@ fun HomeRoute(
     onOpen: (WebApp) -> Unit,
 ) {
     val viewModel: HomeViewModel = viewModel {
-        HomeViewModel(container.webAppRepository, container.settingsRepository)
+        HomeViewModel(
+            repository = container.webAppRepository,
+            settingsRepository = container.settingsRepository,
+            metadataRepository = container.metadataRepository,
+        )
     }
     val state by viewModel.uiState.collectAsStateWithLifecycle()
 
@@ -109,6 +114,7 @@ fun HomeRoute(
             onOpen(app)
         },
         onTogglePin = { app -> viewModel.setPinned(app, !app.pinned) },
+        onRefreshMetadata = viewModel::refreshMetadata,
         onDelete = viewModel::delete,
         onMove = viewModel::moveUnpinned,
     )
@@ -125,6 +131,7 @@ fun HomeScreen(
     onEdit: (String) -> Unit,
     onOpen: (WebApp) -> Unit,
     onTogglePin: (WebApp) -> Unit,
+    onRefreshMetadata: (WebApp) -> Unit,
     onDelete: (WebApp) -> Unit,
     onMove: (Int, Int) -> Unit,
 ) {
@@ -242,7 +249,13 @@ fun HomeScreen(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(16.dp),
                 ) {
-                    AppIcon(name = app.name, seed = hostLabel(app.url), size = 48.dp)
+                    WebAppIcon(
+                        name = app.name,
+                        host = hostLabel(app.url),
+                        iconUrl = app.iconUrl,
+                        iconFile = app.iconFile,
+                        size = 48.dp,
+                    )
                     Column {
                         Text(app.name, style = MaterialTheme.typography.titleMedium)
                         Text(
@@ -266,6 +279,13 @@ fun HomeScreen(
                 ) {
                     menuAppId = null
                     onEdit(app.id)
+                }
+                SheetAction(
+                    icon = { Icon(Icons.Default.Refresh, contentDescription = null) },
+                    label = stringResource(R.string.action_refresh_metadata),
+                ) {
+                    menuAppId = null
+                    onRefreshMetadata(app)
                 }
                 SheetAction(
                     icon = { Icon(Icons.Default.Star, contentDescription = null) },
@@ -494,7 +514,12 @@ private fun WebAppGridCard(
     ) {
         Column(modifier = Modifier.padding(12.dp)) {
             Box {
-                AppIcon(name = app.name, seed = hostLabel(app.url))
+                WebAppIcon(
+                    name = app.name,
+                    host = hostLabel(app.url),
+                    iconUrl = app.iconUrl,
+                    iconFile = app.iconFile,
+                )
                 if (app.pinned) {
                     Icon(
                         Icons.Default.Star,
@@ -578,7 +603,13 @@ private fun WebAppListRow(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(14.dp),
         ) {
-            AppIcon(name = app.name, seed = hostLabel(app.url), size = 48.dp)
+            WebAppIcon(
+                name = app.name,
+                host = hostLabel(app.url),
+                iconUrl = app.iconUrl,
+                iconFile = app.iconFile,
+                size = 48.dp,
+            )
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = app.name,
@@ -731,6 +762,7 @@ private fun HomeScreenPreview() {
             onEdit = {},
             onOpen = {},
             onTogglePin = {},
+            onRefreshMetadata = {},
             onDelete = {},
             onMove = { _, _ -> },
         )

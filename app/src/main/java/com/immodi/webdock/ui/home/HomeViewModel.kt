@@ -3,6 +3,7 @@ package com.immodi.webdock.ui.home
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.immodi.webdock.data.WebAppRepository
+import com.immodi.webdock.data.meta.MetadataRepository
 import com.immodi.webdock.data.prefs.HomeView
 import com.immodi.webdock.data.prefs.SettingsRepository
 import com.immodi.webdock.domain.UrlNormalizer
@@ -30,6 +31,7 @@ data class HomeUiState(
 class HomeViewModel(
     private val repository: WebAppRepository,
     private val settingsRepository: SettingsRepository,
+    private val metadataRepository: MetadataRepository,
 ) : ViewModel() {
 
     private val query = MutableStateFlow("")
@@ -101,6 +103,10 @@ class HomeViewModel(
 
     fun moveUnpinned(from: Int, to: Int) {
         viewModelScope.launch { repository.moveUnpinned(from, to) }
+    }
+
+    fun refreshMetadata(app: WebApp) {
+        viewModelScope.launch { metadataRepository.refresh(app) }
     }
 
     fun markOpened(app: WebApp) {

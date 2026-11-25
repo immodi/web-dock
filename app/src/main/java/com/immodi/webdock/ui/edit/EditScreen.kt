@@ -22,6 +22,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.InputChip
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -45,7 +46,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.immodi.webdock.AppContainer
 import com.immodi.webdock.R
 import com.immodi.webdock.domain.UrlNormalizer
-import com.immodi.webdock.ui.components.AppIcon
+import com.immodi.webdock.ui.components.WebAppIcon
 import com.immodi.webdock.ui.components.hostLabel
 
 @Composable
@@ -55,7 +56,7 @@ fun EditRoute(
     onBack: () -> Unit,
 ) {
     val viewModel: EditViewModel = viewModel(key = appId ?: "new") {
-        EditViewModel(appId, container.webAppRepository)
+        EditViewModel(appId, container.webAppRepository, container.metadataRepository)
     }
     val state by viewModel.state.collectAsStateWithLifecycle()
 
@@ -98,6 +99,7 @@ fun EditScreen(
     }
     val normalizedUrl = UrlNormalizer.normalize(state.url)
     val previewHost = normalizedUrl?.let { hostLabel(it) }
+    val existingIconFile = state.original?.takeIf { normalizedUrl == it.url }?.iconFile
 
     Scaffold(
         topBar = {
@@ -172,6 +174,10 @@ fun EditScreen(
                 ),
             )
 
+            if (state.metadataLoading) {
+                LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+            }
+
             if (normalizedUrl != null && previewHost != null) {
                 Card(modifier = Modifier.fillMaxWidth()) {
                     Row(
@@ -179,9 +185,11 @@ fun EditScreen(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(16.dp),
                     ) {
-                        AppIcon(
+                        WebAppIcon(
                             name = state.name.ifBlank { previewHost },
-                            seed = previewHost,
+                            host = previewHost,
+                            iconUrl = state.metadata?.iconUrl,
+                            iconFile = existingIconFile,
                             size = 48.dp,
                         )
                         Column(modifier = Modifier.weight(1f)) {
