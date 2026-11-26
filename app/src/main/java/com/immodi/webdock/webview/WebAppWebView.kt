@@ -35,11 +35,13 @@ fun WebView.configureForApp(appSettings: AppSettings, profile: Profile?) {
         }
     }
 
-    CookieManager.getInstance().setAcceptThirdPartyCookies(this, appSettings.thirdPartyCookies)
-    CookieManager.getInstance().setAcceptCookie(true)
-    if (profile != null && WebViewFeature.isFeatureSupported(WebViewFeature.MULTI_PROFILE)) {
-        profile.cookieManager.setAcceptCookie(true)
+    val cookies = if (profile != null && WebViewFeature.isFeatureSupported(WebViewFeature.MULTI_PROFILE)) {
+        profile.cookieManager
+    } else {
+        CookieManager.getInstance()
     }
+    cookies.setAcceptThirdPartyCookies(this, appSettings.thirdPartyCookies)
+    cookies.setAcceptCookie(true)
 
     if (BuildConfig.DEBUG) {
         WebView.setWebContentsDebuggingEnabled(true)
