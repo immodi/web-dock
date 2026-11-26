@@ -50,20 +50,35 @@ class MetadataFetcher(
     }
 
     private fun get(url: String, maxBytes: Long, accept: String): FetchedText? {
-        val request = Request.Builder()
-            .url(url)
-            .header("User-Agent", MOBILE_USER_AGENT)
-            .header("Accept", accept)
-            .build()
+        var currentUrl = url
+        var redirects = 0
+        while (true) {
+            val request = Request.Builder()
+                .url(currentUrl)
+                .header("User-Agent", MOBILE_USER_AGENT)
+                .header("Accept", accept)
+                .build()
+            val response = client.newCall(request).execute()
 
-        client.newCall(request).execute().use { response ->
-            val body = response.body ?: return null
-            val bytes = readBounded(body.source(), maxBytes) ?: return null
-            val charset = body.contentType()?.charset(Charsets.UTF_8) ?: Charsets.UTF_8
-            return FetchedText(
-                text = bytes.toString(charset),
-                finalUrl = response.request.url.toString(),
-            )
+            if (response.isRedirect) {
+                val location = response.header("Location")
+                val next = location?.let { response.request.url.resolve(it) }
+                response.close()
+                if (next == null || redirects >= MAX_REDIRECTS) return null
+                currentUrl = next.toString()
+                redirects++
+                continue
+            }
+
+            response.use { result ->
+                val body = result.body ?: return null
+                val bytes = readBounded(body.source(), maxBytes) ?: return null
+                val charset = body.contentType()?.charset(Charsets.UTF_8) ?: Charsets.UTF_8
+                return FetchedText(
+                    text = bytes.toString(charset),
+                    finalUrl = result.request.url.toString(),
+                )
+            }
         }
     }
 
@@ -106,8 +121,10 @@ class MetadataFetcher(
             .readTimeout(8, java.util.concurrent.TimeUnit.SECONDS)
             .writeTimeout(8, java.util.concurrent.TimeUnit.SECONDS)
             .callTimeout(8, java.util.concurrent.TimeUnit.SECONDS)
-            .followRedirects(true)
-            .followSslRedirects(true)
+            .followRedirects(false)
+            .followSslRedirects(false)
             .build()
+
+        private const val MAX_REDIRECTS = 5
     }
 }
