@@ -127,4 +127,24 @@ class MetadataFetcherTest {
         assertNull(MetadataFetcher(OkHttpClient()).fetch("not a url"))
         assertNull(MetadataFetcher(OkHttpClient()).fetch("javascript:alert(1)"))
     }
+
+    @Test
+    fun givesUpAfterFiveRedirects() = runTest {
+        repeat(6) { index ->
+            server.enqueue(
+                MockResponse()
+                    .setResponseCode(302)
+                    .setHeader("Location", "/redirect-${index + 1}"),
+            )
+        }
+        server.enqueue(
+            MockResponse()
+                .setHeader("Content-Type", "text/html")
+                .setBody("<html><head><title>Final</title></head></html>"),
+        )
+
+        val metadata = MetadataFetcher().fetch(server.url("/start").toString())
+
+        assertNull(metadata)
+    }
 }
