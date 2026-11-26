@@ -362,6 +362,7 @@ class WebAppActivity : ComponentActivity() {
         return if (currentApp.settings.pullToRefresh) {
             SwipeRefreshLayout(context).apply {
                 swipeRefresh = this
+                setOnChildScrollUpCallback { _, _ -> view.canScrollVertically(-1) }
                 setOnRefreshListener { view.reload() }
                 addView(view, ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
             }

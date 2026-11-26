@@ -537,6 +537,7 @@ private fun WebAppGridCard(
     Card(
         modifier = Modifier
             .fillMaxWidth()
+            .height(132.dp)
             .onGloballyPositioned { coordinates ->
                 reorderState.bounds[app.id] = Rect(
                     offset = coordinates.localToRoot(Offset.Zero),
@@ -593,13 +594,6 @@ private fun WebAppGridCard(
                 text = app.name,
                 style = MaterialTheme.typography.titleSmall,
                 maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-            )
-            Text(
-                text = hostLabel(app.url),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
         }
@@ -667,21 +661,13 @@ private fun WebAppListRow(
                 iconFile = app.iconFile,
                 size = 48.dp,
             )
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = app.name,
-                    style = MaterialTheme.typography.titleMedium,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-                Text(
-                    text = hostLabel(app.url),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-            }
+            Text(
+                text = app.name,
+                style = MaterialTheme.typography.titleMedium,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f),
+            )
             if (app.pinned) {
                 Icon(
                     Icons.Default.Star,
