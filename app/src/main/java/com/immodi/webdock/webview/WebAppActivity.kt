@@ -464,7 +464,11 @@ class WebAppActivity : ComponentActivity() {
             error: WebResourceError,
         ) {
             if (!request.isForMainFrame) return
-            if (error.errorCode == WebViewClient.ERROR_UNKNOWN) return
+            if (error.errorCode == WebViewClient.ERROR_UNKNOWN ||
+                error.errorCode == ERROR_CANCELED_CODE
+            ) {
+                return
+            }
             loading = false
             swipeRefresh?.isRefreshing = false
             errorPage = ErrorPage(request.url.toString(), error.description.toString())
@@ -1417,6 +1421,9 @@ class WebAppActivity : ComponentActivity() {
         private const val EXTRA_APP_ID = "app_id"
         private const val STATE_WEB_VIEW = "web_view_state"
         private const val BLOB_BRIDGE = "WebDockBlobSaver"
+
+        // WebView reports canceled loads with -3 but exposes no public constant.
+        private const val ERROR_CANCELED_CODE = -3
 
         fun createIntent(context: Context, appId: String): Intent =
             Intent(context, WebAppActivity::class.java).apply {
