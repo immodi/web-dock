@@ -19,7 +19,6 @@ class IconCache(private val context: Context) {
 
     suspend fun cache(appId: String, iconUrl: String?): String? = withContext(Dispatchers.IO) {
         if (iconUrl.isNullOrBlank()) return@withContext null
-
         val request = ImageRequest.Builder(context)
             .data(iconUrl)
             .allowHardware(false)
@@ -38,6 +37,10 @@ class IconCache(private val context: Context) {
         }
         bitmap.recycle()
         file.name
+    }
+
+    fun delete(appId: String) {
+        File(context.filesDir, "$ICONS_DIRECTORY/$appId.png").delete()
     }
 
     private companion object {

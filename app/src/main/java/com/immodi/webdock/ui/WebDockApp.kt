@@ -10,6 +10,7 @@ import androidx.navigation.navArgument
 import com.immodi.webdock.AppContainer
 import com.immodi.webdock.ui.edit.EditRoute
 import com.immodi.webdock.ui.home.HomeRoute
+import com.immodi.webdock.ui.settings.SettingsRoute
 import com.immodi.webdock.webview.WebAppActivity
 
 @Composable
@@ -24,6 +25,14 @@ fun WebDockApp(container: AppContainer) {
                 onAdd = { navController.navigate("edit") },
                 onEdit = { appId -> navController.navigate("edit?appId=$appId") },
                 onOpen = { app -> context.startActivity(WebAppActivity.createIntent(context, app.id)) },
+                onOpenSettings = { navController.navigate("settings") },
+            )
+        }
+
+        composable("settings") {
+            SettingsRoute(
+                container = container,
+                onBack = { navController.popBackStack() },
             )
         }
 

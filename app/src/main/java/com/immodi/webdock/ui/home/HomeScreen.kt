@@ -27,12 +27,14 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
@@ -92,12 +94,14 @@ fun HomeRoute(
     onAdd: () -> Unit,
     onEdit: (String) -> Unit,
     onOpen: (WebApp) -> Unit,
+    onOpenSettings: () -> Unit,
 ) {
     val viewModel: HomeViewModel = viewModel {
         HomeViewModel(
             repository = container.webAppRepository,
             settingsRepository = container.settingsRepository,
             metadataRepository = container.metadataRepository,
+            profileManager = container.profileManager,
         )
     }
     val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -115,8 +119,11 @@ fun HomeRoute(
         },
         onTogglePin = { app -> viewModel.setPinned(app, !app.pinned) },
         onRefreshMetadata = viewModel::refreshMetadata,
+        onClearData = viewModel::clearData,
         onDelete = viewModel::delete,
         onMove = viewModel::moveUnpinned,
+        onOpenSettings = onOpenSettings,
+        profileSupported = container.profileManager.isMultiProfileSupported(),
     )
 }
 
@@ -132,11 +139,15 @@ fun HomeScreen(
     onOpen: (WebApp) -> Unit,
     onTogglePin: (WebApp) -> Unit,
     onRefreshMetadata: (WebApp) -> Unit,
+    onClearData: (WebApp) -> Unit,
     onDelete: (WebApp) -> Unit,
     onMove: (Int, Int) -> Unit,
+    onOpenSettings: () -> Unit,
+    profileSupported: Boolean,
 ) {
     var menuAppId by remember { mutableStateOf<String?>(null) }
     var deleteApp by remember { mutableStateOf<WebApp?>(null) }
+    var clearDataApp by remember { mutableStateOf<WebApp?>(null) }
     val menuApp = state.apps.firstOrNull { it.id == menuAppId }
     val reorderState = remember { ReorderState() }
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
@@ -146,6 +157,12 @@ fun HomeScreen(
             TopAppBar(
                 title = { Text(stringResource(R.string.app_name)) },
                 actions = {
+                    IconButton(onClick = onOpenSettings) {
+                        Icon(
+                            Icons.Default.Settings,
+                            contentDescription = stringResource(R.string.settings),
+                        )
+                    }
                     TextButton(onClick = onToggleView) {
                         Text(
                             stringResource(
@@ -297,6 +314,13 @@ fun HomeScreen(
                     onTogglePin(app)
                 }
                 SheetAction(
+                    icon = { Icon(Icons.Default.Clear, contentDescription = null) },
+                    label = stringResource(R.string.clear_data),
+                ) {
+                    menuAppId = null
+                    clearDataApp = app
+                }
+                SheetAction(
                     icon = {
                         Icon(
                             Icons.Default.Delete,
@@ -313,6 +337,39 @@ fun HomeScreen(
                 Spacer(Modifier.height(16.dp))
             }
         }
+    }
+
+    clearDataApp?.let { app ->
+        val shared = !app.settings.isolateStorage || !profileSupported
+        AlertDialog(
+            onDismissRequest = { clearDataApp = null },
+            title = { Text(stringResource(R.string.clear_data_title)) },
+            text = {
+                Text(
+                    stringResource(
+                        if (shared) R.string.clear_data_message_shared else R.string.clear_data_message,
+                    ),
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        clearDataApp = null
+                        onClearData(app)
+                    },
+                ) {
+                    Text(
+                        stringResource(R.string.clear_data),
+                        color = MaterialTheme.colorScheme.error,
+                    )
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { clearDataApp = null }) {
+                    Text(stringResource(R.string.cancel))
+                }
+            },
+        )
     }
 
     deleteApp?.let { app ->
@@ -763,8 +820,11 @@ private fun HomeScreenPreview() {
             onOpen = {},
             onTogglePin = {},
             onRefreshMetadata = {},
+            onClearData = {},
             onDelete = {},
             onMove = { _, _ -> },
+            onOpenSettings = {},
+            profileSupported = true,
         )
     }
 }

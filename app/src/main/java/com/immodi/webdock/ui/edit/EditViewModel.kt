@@ -5,6 +5,8 @@ import androidx.lifecycle.viewModelScope
 import com.immodi.webdock.data.WebAppRepository
 import com.immodi.webdock.data.meta.Metadata
 import com.immodi.webdock.data.meta.MetadataRepository
+import com.immodi.webdock.data.prefs.SettingsRepository
+import com.immodi.webdock.domain.AppSettings
 import com.immodi.webdock.domain.UrlNormalizer
 import com.immodi.webdock.domain.WebApp
 import kotlinx.coroutines.Job
@@ -12,6 +14,7 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -26,6 +29,7 @@ data class EditUiState(
     val name: String = "",
     val nameEdited: Boolean = false,
     val tags: List<String> = emptyList(),
+    val appSettings: AppSettings = AppSettings(),
     val tagInput: String = "",
     val urlError: EditUrlError? = null,
     val metadata: Metadata? = null,
@@ -43,6 +47,7 @@ class EditViewModel(
     private val appId: String?,
     private val repository: WebAppRepository,
     private val metadataRepository: MetadataRepository,
+    private val settingsRepository: SettingsRepository,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(EditUiState(isNew = appId == null, loading = appId != null))
@@ -69,6 +74,7 @@ class EditViewModel(
                         name = app.name,
                         nameEdited = app.nameEdited,
                         tags = app.tags,
+                        appSettings = app.settings,
                         metadata = Metadata(
                             title = null,
                             name = app.name,
@@ -79,7 +85,18 @@ class EditViewModel(
                     )
                 }
             }
+        } else {
+            viewModelScope.launch {
+                val defaults = settingsRepository.settings.first().defaultAppSettings
+                _state.update { current ->
+                    if (current.isNew) current.copy(appSettings = defaults) else current
+                }
+            }
         }
+    }
+
+    fun onSettingsChanged(settings: AppSettings) {
+        _state.update { it.copy(appSettings = settings) }
     }
 
     fun onUrlChange(value: String) {
@@ -176,6 +193,7 @@ class EditViewModel(
                     iconUrl = metadata?.iconUrl,
                     themeColor = metadata?.themeColor,
                     backgroundColor = metadata?.backgroundColor,
+                    settings = current.appSettings,
                 )
             } else {
                 original.copy(
@@ -191,6 +209,7 @@ class EditViewModel(
                     } else {
                         metadata?.backgroundColor ?: original.backgroundColor
                     },
+                    settings = current.appSettings,
                 )
             }
 

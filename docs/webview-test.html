@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#3F51B5">
+  <title>WebDock WebView Test</title>
+  <style>
+    :root { color-scheme: light dark; }
+    body { font-family: system-ui, sans-serif; margin: 0; padding: 16px; line-height: 1.4; }
+    h1 { font-size: 1.4rem; }
+    section { border: 1px solid #8884; border-radius: 12px; padding: 12px; margin: 12px 0; }
+    h2 { font-size: 1rem; margin: 0 0 8px; }
+    button, a.button { display: inline-block; padding: 10px 14px; margin: 4px 4px 4px 0; border-radius: 999px; border: 1px solid #8886; background: #3F51B5; color: white; text-decoration: none; }
+    video { width: 100%; max-height: 240px; background: #000; border-radius: 8px; }
+    pre { white-space: pre-wrap; background: #8881; padding: 8px; border-radius: 8px; }
+  </style>
+</head>
+<body>
+<h1>WebDock WebView Test</h1>
+<p>Serve this page over http(s), then add it as a WebDock app. Each section exercises one native WebView feature.</p>
+<pre id="log">ready</pre>
+
+<section>
+  <h2>JavaScript dialogs</h2>
+  <button onclick="alert('Alert from the test page')">Alert</button>
+  <button onclick="confirm('Confirm from the test page?')">Confirm</button>
+  <button onclick="var v = prompt('Prompt from the test page', 'hello'); log('prompt: ' + v);">Prompt</button>
+</section>
+
+<section>
+  <h2>File upload</h2>
+  <input id="file" type="file" multiple accept="image/*,application/pdf">
+  <p id="files">No files chosen.</p>
+  <script>
+    document.getElementById('file').addEventListener('change', function (event) {
+      var names = Array.from(event.target.files || []).map(function (f) { return f.name + ' (' + f.size + ' bytes)'; });
+      document.getElementById('files').textContent = names.length ? names.join(', ') : 'No files chosen.';
+    });
+  </script>
+</section>
+
+<section>
+  <h2>Camera / microphone</h2>
+  <button onclick="startCamera()">Start camera</button>
+  <button onclick="startMic()">Start microphone</button>
+  <button onclick="stopMedia()">Stop</button>
+  <video id="preview" autoplay playsinline muted></video>
+  <script>
+    var stream;
+    function show(s) { stream = s; document.getElementById('preview').srcObject = s; log('media started'); }
+    function startCamera() { navigator.mediaDevices.getUserMedia({ video: true }).then(show).catch(function (e) { log('camera error: ' + e); }); }
+    function startMic() { navigator.mediaDevices.getUserMedia({ audio: true }).then(show).catch(function (e) { log('mic error: ' + e); }); }
+    function stopMedia() { if (stream) { stream.getTracks().forEach(function (t) { t.stop(); }); stream = null; } log('media stopped'); }
+  </script>
+</section>
+
+<section>
+  <h2>Geolocation</h2>
+  <button onclick="navigator.geolocation.getCurrentPosition(function (p) { log('location: ' + p.coords.latitude + ', ' + p.coords.longitude); }, function (e) { log('location error: ' + e.message); })">Get location</button>
+</section>
+
+<section>
+  <h2>Fullscreen video</h2>
+  <video id="fullscreenVideo" controls playsinline src="https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4"></video>
+  <button onclick="document.getElementById('fullscreenVideo').requestFullscreen()">Play fullscreen</button>
+</section>
+
+<section>
+  <h2>Popups and navigation</h2>
+  <button onclick="window.open('https://example.com/', '_blank')">window.open example.com</button>
+  <a class="button" href="https://example.com/" target="_blank" rel="noopener">target=_blank link</a>
+  <a class="button" href="https://example.org/">same-tab external link</a>
+  <a class="button" href="mailto:test@example.com">mailto link</a>
+</section>
+
+<section>
+  <h2>Downloads</h2>
+  <a class="button" href="https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf" download>HTTP PDF download</a>
+  <button onclick="downloadBlob()">blob: download</button>
+  <button onclick="downloadData()">data: download</button>
+  <script>
+    function downloadBlob() {
+      var blob = new Blob(['WebDock blob download\n'], { type: 'text/plain' });
+      var url = URL.createObjectURL(blob);
+      trigger(url, 'webdock-blob.txt');
+    }
+    function downloadData() {
+      trigger('data:text/plain;base64,V2ViRG9jayBkYXRhIGRvd25sb2FkCg==', 'webdock-data.txt');
+    }
+    function trigger(url, name) {
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = name;
+      a.textContent = 'download';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      if (url.indexOf('blob:') === 0) setTimeout(function () { URL.revokeObjectURL(url); }, 5000);
+    }
+  </script>
+</section>
+
+<script>
+  function log(message) {
+    var element = document.getElementById('log');
+    element.textContent = new Date().toLocaleTimeString() + ' — ' + message + '\n' + element.textContent;
+  }
+  window.addEventListener('online', function () { log('online'); });
+  window.addEventListener('offline', function () { log('offline'); });
+</script>
+</body>
+</html>
