@@ -328,7 +328,12 @@ class WebAppActivity : ComponentActivity() {
     }
 
     private fun createHostView(context: Context, currentApp: WebApp): View {
-        val view = WebView(context)
+        val view = WebView(context).apply {
+            layoutParams = ViewGroup.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT,
+            )
+        }
         webView = view
         profile = container.profileManager.attachProfile(
             view,
@@ -359,15 +364,14 @@ class WebAppActivity : ComponentActivity() {
             view.loadUrl(currentApp.url)
         }
 
-        return if (currentApp.settings.pullToRefresh) {
-            SwipeRefreshLayout(context).apply {
-                swipeRefresh = this
-                setOnChildScrollUpCallback { _, _ -> view.canScrollVertically(-1) }
-                setOnRefreshListener { view.reload() }
-                addView(view, ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
-            }
-        } else {
-            view
+        // Always keep the same view hierarchy. Toggling pull-to-refresh must not
+        // change how the WebView is parented or measured.
+        return SwipeRefreshLayout(context).apply {
+            swipeRefresh = this
+            isEnabled = currentApp.settings.pullToRefresh
+            setOnChildScrollUpCallback { _, _ -> view.canScrollVertically(-1) }
+            setOnRefreshListener { view.reload() }
+            addView(view, ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
         }
     }
 
