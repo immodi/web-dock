@@ -69,9 +69,13 @@ class MetadataFetcher(
 
     private fun readBounded(source: BufferedSource, maxBytes: Long): ByteArray? {
         val buffer = Buffer()
-        val read = source.read(buffer, maxBytes + 1)
-        if (read == -1L) return ByteArray(0)
-        if (read > maxBytes) return null
+        var total = 0L
+        while (total <= maxBytes) {
+            val read = source.read(buffer, maxBytes + 1 - total)
+            if (read == -1L) break
+            total += read
+        }
+        if (total > maxBytes) return null
         return buffer.readByteArray()
     }
 

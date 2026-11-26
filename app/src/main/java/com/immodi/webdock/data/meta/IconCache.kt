@@ -35,7 +35,6 @@ class IconCache(private val context: Context) {
         FileOutputStream(file).use { output ->
             bitmap.compress(Bitmap.CompressFormat.PNG, 100, output)
         }
-        bitmap.recycle()
         file.name
     }
 

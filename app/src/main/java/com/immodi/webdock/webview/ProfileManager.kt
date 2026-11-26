@@ -53,7 +53,12 @@ class ProfileManager(
         if (isolate && isMultiProfileSupported()) {
             val store = ProfileStore.getInstance()
             val name = profileName(appId)
-            if (store.getProfile(name) == null) return
+            val profile = store.getProfile(name) ?: return
+            runCatching {
+                profile.cookieManager.removeAllCookies(null)
+                profile.cookieManager.flush()
+                profile.webStorage.deleteAllData()
+            }
             val deleted = runCatching { store.deleteProfile(name) }.getOrDefault(false)
             if (!deleted) pendingStore.add(appId)
         } else {

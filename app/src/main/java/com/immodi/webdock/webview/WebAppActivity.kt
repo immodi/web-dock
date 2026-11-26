@@ -147,6 +147,7 @@ class WebAppActivity : ComponentActivity() {
     private var clearDataPrompt by mutableStateOf(false)
     private var isFullscreen by mutableStateOf(false)
     private var savedWebViewState: Bundle? = null
+    private var swipeRefresh: SwipeRefreshLayout? = null
 
     private var fileChooserLauncher: ActivityResultLauncher<Intent>? = null
     private var permissionLauncher: ActivityResultLauncher<Array<String>>? = null
@@ -268,6 +269,7 @@ class WebAppActivity : ComponentActivity() {
                     (view as? SwipeRefreshLayout)?.removeAllViews()
                     webView?.destroy()
                     webView = null
+                    swipeRefresh = null
                 },
             )
 
@@ -287,15 +289,21 @@ class WebAppActivity : ComponentActivity() {
                 Box(
                     modifier = Modifier
                         .align(Alignment.CenterEnd)
-                        .padding(end = 3.dp)
-                        .width(6.dp)
-                        .height(56.dp)
-                        .background(
-                            color = Color.Black.copy(alpha = 0.25f),
-                            shape = RoundedCornerShape(3.dp),
-                        )
+                        .width(28.dp)
+                        .height(72.dp)
                         .clickable { showSheet = true },
-                )
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .width(6.dp)
+                            .height(56.dp)
+                            .background(
+                                color = Color.Black.copy(alpha = 0.25f),
+                                shape = RoundedCornerShape(3.dp),
+                            ),
+                    )
+                }
             }
 
             SnackbarHost(
@@ -353,6 +361,7 @@ class WebAppActivity : ComponentActivity() {
 
         return if (currentApp.settings.pullToRefresh) {
             SwipeRefreshLayout(context).apply {
+                swipeRefresh = this
                 setOnRefreshListener { view.reload() }
                 addView(view, ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
             }
@@ -446,6 +455,7 @@ class WebAppActivity : ComponentActivity() {
 
         override fun onPageFinished(view: WebView, url: String?) {
             loading = false
+            swipeRefresh?.isRefreshing = false
         }
 
         override fun onReceivedError(
@@ -456,6 +466,7 @@ class WebAppActivity : ComponentActivity() {
             if (!request.isForMainFrame) return
             if (error.errorCode == WebViewClient.ERROR_UNKNOWN) return
             loading = false
+            swipeRefresh?.isRefreshing = false
             errorPage = ErrorPage(request.url.toString(), error.description.toString())
         }
 
@@ -486,6 +497,7 @@ class WebAppActivity : ComponentActivity() {
         ) {
             handler.cancel()
             loading = false
+            swipeRefresh?.isRefreshing = false
             errorPage = ErrorPage(error.url.orEmpty(), getString(R.string.ssl_error_message))
         }
     }
@@ -644,6 +656,11 @@ class WebAppActivity : ComponentActivity() {
             resultMsg: Message,
         ): Boolean {
             val popup = WebView(this@WebAppActivity)
+            container.profileManager.attachProfile(
+                popup,
+                appId,
+                app?.settings?.isolateStorage ?: false,
+            )
             popup.settings.javaScriptEnabled = true
             popup.settings.domStorageEnabled = true
             popup.webViewClient = object : WebViewClient() {
@@ -737,7 +754,12 @@ class WebAppActivity : ComponentActivity() {
 
     private fun openExternalApp(url: String) {
         try {
-            startActivity(Intent(Intent.ACTION_VIEW, url.toUri()))
+            val intent = if (url.startsWith("intent:", ignoreCase = true)) {
+                Intent.parseUri(url, Intent.URI_INTENT_SCHEME)
+            } else {
+                Intent(Intent.ACTION_VIEW, url.toUri())
+            }
+            startActivity(intent)
         } catch (_: Exception) {
             Toast.makeText(this, R.string.no_app_handles_link, Toast.LENGTH_SHORT).show()
         }
@@ -1021,7 +1043,7 @@ class WebAppActivity : ComponentActivity() {
                 Button(
                     onClick = {
                         errorPage = null
-                        webView?.reload()
+                        if (webView != null) webView?.reload() else recreate()
                     },
                 ) {
                     Text(stringResource(R.string.retry))
@@ -1125,10 +1147,7 @@ class WebAppActivity : ComponentActivity() {
                 TextButton(
                     onClick = {
                         clearDataPrompt = false
-                        container.profileManager.clearData(
-                            currentApp.id,
-                            currentApp.settings.isolateStorage,
-                        )
+                        clearActiveData(currentApp)
                         messages.trySend(getString(R.string.data_cleared))
                     },
                 ) {
@@ -1144,6 +1163,22 @@ class WebAppActivity : ComponentActivity() {
                 }
             },
         )
+    }
+
+    private fun clearActiveData(currentApp: WebApp) {
+        val cookies = container.profileManager.cookieManager(profile)
+        cookies.removeAllCookies(null)
+        cookies.flush()
+        if (profile != null && androidx.webkit.WebViewFeature.isFeatureSupported(androidx.webkit.WebViewFeature.MULTI_PROFILE)) {
+            profile?.webStorage?.deleteAllData()
+        } else {
+            android.webkit.WebStorage.getInstance().deleteAllData()
+        }
+        webView?.clearCache(true)
+        webView?.clearFormData()
+        webView?.clearHistory()
+        webView?.reload()
+        container.profileManager.clearData(currentApp.id, currentApp.settings.isolateStorage)
     }
 
     private fun handleDownload(
@@ -1337,6 +1372,10 @@ class WebAppActivity : ComponentActivity() {
     }
 
     override fun onDestroy() {
+        jsDialog?.result?.cancel()
+        jsDialog = null
+        pendingFileChooser?.callback?.onReceiveValue(null)
+        pendingFileChooser = null
         if (fullscreenOverlay != null) hideFullscreen()
         webView?.let { view ->
             (view.parent as? ViewGroup)?.removeView(view)
