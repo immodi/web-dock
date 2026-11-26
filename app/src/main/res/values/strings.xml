@@ -40,4 +40,79 @@
     <string name="error_duplicate_url">This URL is already in your list</string>
     <string name="error_save_failed">Could not save. Try again.</string>
     <string name="back">Back</string>
+
+    <string name="settings">Settings</string>
+    <string name="app_settings">App settings</string>
+    <string name="settings_appearance">Appearance</string>
+    <string name="settings_theme">Theme</string>
+    <string name="theme_system">System</string>
+    <string name="theme_light">Light</string>
+    <string name="theme_dark">Dark</string>
+    <string name="settings_dynamic_color">Dynamic color</string>
+    <string name="settings_dynamic_color_summary">Use wallpaper colors on Android 12+</string>
+    <string name="settings_home">Home</string>
+    <string name="settings_default_view">Default view</string>
+    <string name="settings_edge_handle">Show edge handle</string>
+    <string name="settings_edge_handle_summary">The handle that opens the in-app menu</string>
+    <string name="settings_defaults">Defaults for new apps</string>
+    <string name="settings_about">About</string>
+    <string name="settings_version">Version %1$s</string>
+    <string name="settings_readme">Project README</string>
+
+    <string name="setting_isolate_storage">Isolate storage</string>
+    <string name="setting_isolate_storage_summary">Keep this app\'s cookies and site data separate</string>
+    <string name="setting_isolate_unsupported">This device\'s WebView does not support separate profiles, so storage is shared with other apps.</string>
+    <string name="setting_desktop_mode">Desktop mode</string>
+    <string name="setting_desktop_mode_summary">Desktop user agent with a wide viewport</string>
+    <string name="setting_zoom">Zoom</string>
+    <string name="setting_zoom_value">%1$d%%</string>
+    <string name="setting_orientation">Orientation</string>
+    <string name="orientation_auto">Auto</string>
+    <string name="orientation_portrait">Portrait</string>
+    <string name="orientation_landscape">Landscape</string>
+    <string name="setting_keep_screen_on">Keep screen on</string>
+    <string name="setting_pull_to_refresh">Pull to refresh</string>
+    <string name="setting_javascript">JavaScript</string>
+    <string name="setting_third_party_cookies">Third-party cookies</string>
+    <string name="setting_link_policy">Link handling</string>
+    <string name="link_policy_same_host">Same host in app</string>
+    <string name="link_policy_all_in_app">All links in app</string>
+    <string name="link_policy_all_external">All links external</string>
+    <string name="setting_allowed_hosts">Additional in-app hosts</string>
+    <string name="setting_allowed_hosts_hint">Comma-separated hosts</string>
+    <string name="setting_immersive">Immersive mode</string>
+    <string name="setting_immersive_summary">Hide the system bars</string>
+    <string name="settings_takes_effect_next_open">Some changes take effect the next time this app is opened.</string>
+
+    <string name="reload">Reload</string>
+    <string name="back_to_manager">Back to manager</string>
+    <string name="open_in_browser">Open in browser</string>
+    <string name="share_url">Share URL</string>
+    <string name="clear_data">Clear data</string>
+    <string name="clear_data_title">Clear app data?</string>
+    <string name="clear_data_message">Clear cookies and site data for this app? You will be signed out.</string>
+    <string name="clear_data_message_shared">Profiles are not supported on this device, so this clears storage for all apps. You will be signed out everywhere.</string>
+    <string name="data_cleared">App data cleared</string>
+
+    <string name="error_page_title">Can\'t load this page</string>
+    <string name="retry">Retry</string>
+    <string name="ssl_error_message">The secure connection could not be verified.</string>
+    <string name="http_error">HTTP error %1$d</string>
+    <string name="no_app_handles_link">No app can open this link</string>
+
+    <string name="choose_file">Choose file</string>
+    <string name="permission_title">Site permission</string>
+    <string name="permission_message">%1$s wants to use your camera or microphone.</string>
+    <string name="location_title">Location permission</string>
+    <string name="location_message">%1$s wants to know your location.</string>
+    <string name="allow">Allow</string>
+    <string name="deny">Deny</string>
+
+    <string name="js_dialog_title">Message</string>
+    <string name="js_ok">OK</string>
+
+    <string name="download_started">Download started</string>
+    <string name="download_saved">Download saved</string>
+    <string name="download_failed">Download failed</string>
+    <string name="renderer_gone">The page stopped working. Reload to try again.</string>
 </resources>

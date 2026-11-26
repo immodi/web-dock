@@ -8,6 +8,7 @@ import com.immodi.webdock.data.prefs.HomeView
 import com.immodi.webdock.data.prefs.SettingsRepository
 import com.immodi.webdock.domain.UrlNormalizer
 import com.immodi.webdock.domain.WebApp
+import com.immodi.webdock.webview.ProfileManager
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -32,7 +33,12 @@ class HomeViewModel(
     private val repository: WebAppRepository,
     private val settingsRepository: SettingsRepository,
     private val metadataRepository: MetadataRepository,
+    private val profileManager: ProfileManager,
 ) : ViewModel() {
+
+    init {
+        profileManager.retryPending()
+    }
 
     private val query = MutableStateFlow("")
     private val selectedTags = MutableStateFlow<Set<String>>(emptySet())
@@ -98,7 +104,17 @@ class HomeViewModel(
     }
 
     fun delete(app: WebApp) {
-        viewModelScope.launch { repository.delete(app.id) }
+        viewModelScope.launch {
+            repository.delete(app.id)
+            metadataRepository.deleteIcon(app.id)
+            profileManager.deleteAppData(app.id, app.settings.isolateStorage)
+        }
+    }
+
+    fun clearData(app: WebApp) {
+        viewModelScope.launch {
+            profileManager.clearData(app.id, app.settings.isolateStorage)
+        }
     }
 
     fun moveUnpinned(from: Int, to: Int) {

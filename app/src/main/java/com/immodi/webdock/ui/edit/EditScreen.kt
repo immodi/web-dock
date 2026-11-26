@@ -1,22 +1,29 @@
 package com.immodi.webdock.ui.edit
 
+import android.app.Activity
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -24,6 +31,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.InputChip
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -34,6 +42,8 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
@@ -45,9 +55,12 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.immodi.webdock.AppContainer
 import com.immodi.webdock.R
+import com.immodi.webdock.domain.AppSettings
 import com.immodi.webdock.domain.UrlNormalizer
 import com.immodi.webdock.ui.components.WebAppIcon
 import com.immodi.webdock.ui.components.hostLabel
+import com.immodi.webdock.ui.settings.AppSettingsActivity
+import kotlinx.serialization.json.Json
 
 @Composable
 fun EditRoute(
@@ -56,7 +69,12 @@ fun EditRoute(
     onBack: () -> Unit,
 ) {
     val viewModel: EditViewModel = viewModel(key = appId ?: "new") {
-        EditViewModel(appId, container.webAppRepository, container.metadataRepository)
+        EditViewModel(
+            appId,
+            container.webAppRepository,
+            container.metadataRepository,
+            container.settingsRepository,
+        )
     }
     val state by viewModel.state.collectAsStateWithLifecycle()
 
@@ -75,6 +93,7 @@ fun EditRoute(
         onTagInputChange = viewModel::onTagInputChange,
         onAddTag = viewModel::addTag,
         onRemoveTag = viewModel::removeTag,
+        onSettingsChanged = viewModel::onSettingsChanged,
         onSave = viewModel::save,
         onBack = onBack,
     )
@@ -89,6 +108,7 @@ fun EditScreen(
     onTagInputChange: (String) -> Unit,
     onAddTag: () -> Unit,
     onRemoveTag: (String) -> Unit,
+    onSettingsChanged: (AppSettings) -> Unit,
     onSave: () -> Unit,
     onBack: () -> Unit,
 ) {
@@ -100,6 +120,16 @@ fun EditScreen(
     val normalizedUrl = UrlNormalizer.normalize(state.url)
     val previewHost = normalizedUrl?.let { hostLabel(it) }
     val existingIconFile = state.original?.takeIf { normalizedUrl == it.url }?.iconFile
+    val context = LocalContext.current
+    val settingsLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.StartActivityForResult(),
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            result.data?.getStringExtra(AppSettingsActivity.EXTRA_SETTINGS)?.let { raw ->
+                runCatching { Json.decodeFromString<AppSettings>(raw) }.getOrNull()?.let(onSettingsChanged)
+            }
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -179,7 +209,15 @@ fun EditScreen(
             }
 
             if (normalizedUrl != null && previewHost != null) {
-                Card(modifier = Modifier.fillMaxWidth()) {
+                val previewColor = state.metadata?.themeColor?.let { Color(it) }
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = if (previewColor != null) {
+                        CardDefaults.cardColors(containerColor = previewColor.copy(alpha = 0.15f))
+                    } else {
+                        CardDefaults.cardColors()
+                    },
+                ) {
                     Row(
                         modifier = Modifier.padding(16.dp),
                         verticalAlignment = Alignment.CenterVertically,
@@ -269,6 +307,23 @@ fun EditScreen(
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                 keyboardActions = KeyboardActions(onDone = { onAddTag() }),
             )
+
+            OutlinedButton(
+                onClick = {
+                    settingsLauncher.launch(
+                        AppSettingsActivity.createIntent(context, state.original?.id, state.appSettings),
+                    )
+                },
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Icon(
+                    Icons.Default.Settings,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp),
+                )
+                Spacer(Modifier.width(8.dp))
+                Text(stringResource(R.string.app_settings))
+            }
 
             if (state.saveFailed) {
                 Text(

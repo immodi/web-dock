@@ -42,4 +42,8 @@ class MetadataRepository(
             }
         }
     }
+
+    fun deleteIcon(appId: String) {
+        iconCache.delete(appId)
+    }
 }

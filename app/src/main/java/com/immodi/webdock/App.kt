@@ -11,6 +11,8 @@ import com.immodi.webdock.data.meta.IconCache
 import com.immodi.webdock.data.meta.MetadataFetcher
 import com.immodi.webdock.data.meta.MetadataRepository
 import com.immodi.webdock.data.prefs.SettingsRepository
+import com.immodi.webdock.webview.PendingProfileStore
+import com.immodi.webdock.webview.ProfileManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -35,7 +37,7 @@ class AppContainer(context: Context) {
 
     private val appContext: Context = context.applicationContext
 
-    private val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     private val database: WebDockDatabase by lazy { WebDockDatabase.build(appContext) }
 
@@ -44,6 +46,10 @@ class AppContainer(context: Context) {
     }
 
     val settingsRepository: SettingsRepository by lazy { SettingsRepository(appContext) }
+
+    val profileManager: ProfileManager by lazy {
+        ProfileManager(appContext, PendingProfileStore(appContext))
+    }
 
     val metadataRepository: MetadataRepository by lazy {
         MetadataRepository(

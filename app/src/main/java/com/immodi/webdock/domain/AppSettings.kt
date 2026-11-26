@@ -1,12 +1,17 @@
 package com.immodi.webdock.domain
 
+import kotlinx.serialization.Serializable
+
+@Serializable
 enum class OrientationMode { AUTO, PORTRAIT, LANDSCAPE }
 
+@Serializable
 enum class LinkPolicy { SAME_HOST_IN_APP, ALL_IN_APP, ALL_EXTERNAL }
 
 /**
  * Per-app behavior. Embedded in [WebApp]; defaults are the values for a new app.
  */
+@Serializable
 data class AppSettings(
     val isolateStorage: Boolean = true,
     val desktopMode: Boolean = false,
